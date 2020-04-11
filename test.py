@@ -18,7 +18,7 @@ class Tests(unittest.TestCase):
                                                   =====================
                 ^100                                                  ^400
 
-        Result (1 SV spanning only exons):
+        Result (1 SV spanning first and last exons):
                 =======================================
                 ^100                                  ^300
         """
