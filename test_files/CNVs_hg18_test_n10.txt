@@ -1,0 +1,3 @@
+Position	Num_SNPs	BP_range	CNV_State	Sample_ID	Start_SNP	End_SNP	Conf_Score
+chr1:9-55	194	506,594	state2,cn=1	x1	rs10797649	cnvi0147950	221.009
+chr1:12-100	186	412,863	state5,cn=3	x2	rs10797649	rs1531793	74.179
