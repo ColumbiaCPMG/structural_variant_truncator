@@ -4,6 +4,7 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+
         {
             "name": "Test",
             "type": "python",
@@ -19,10 +20,24 @@
             "console": "integratedTerminal",
             "args": [
                 "-v",
-                "test_files/CRIC_CNVs_hg18_test_n10.txt",
+                "test_files/CNVs_hg18_test_n10.txt",
                 "-r",
                 "test_files/Homo_sapiens.GRCh37.75_10_chr.txt",
             ],
-        }
+        },
+        {
+            "name": "Main Full Bed",
+            "type": "python",
+            "request": "launch",
+            "program": "sv_truncator.py",
+            "console": "integratedTerminal",
+            "args": [
+                "-v",
+                "test_files/CNVs_hg18.txt",
+                "-r",
+                "test_files/Homo_sapiens.GRCh37.75.txt",
+            ],
+        },
+
     ]
 }

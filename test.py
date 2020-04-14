@@ -1,6 +1,6 @@
 import unittest
 import sv_truncator as T
-import portion as P
+from intervaltree import Interval, IntervalTree
 
 
 class Tests(unittest.TestCase):
@@ -18,62 +18,73 @@ class Tests(unittest.TestCase):
                                                   =====================
                 ^100                                                  ^400
 
-        Result (1 SV spanning first and last exons):
+        Result (1 SV spanning first and last exon):
                 =======================================
                 ^100                                  ^300
         """
         regions = {}
-        regions["chr1"] = [
-            P.closed(100, 200),
-            P.closed(150, 250),
-            P.closed(275, 400),
-        ]
-        sv = P.closed(50, 300)
-
-        result = T.getMatchingIntervals(
-            "chr1", sv, regions
+        regions["chr1"] = IntervalTree(
+            [
+                Interval(100, 200),
+                Interval(150, 250),
+                Interval(275, 400)
+            ]
         )
 
-        intervals = P.closed(100, 250) | P.closed(275, 300)
+        sv = Interval(50, 300)
+
+        result = T.getMatchingIntervalsFromTree(
+            "chr1", sv, regions
+        )
+        expected = IntervalTree([Interval(100, 300)])
+
         self.assertEqual(
             result,
-            intervals
+            expected
         )
 
     def test_chromosome_does_not_exist_in_regions_file(self):
-        regions = {}
-        regions["chr1"] = ''
-        sv = P.closed(0, 1)
+        trees = {}
+        trees['chr1'] = IntervalTree([Interval(-99, 99)])
+        sv = Interval(10, 45)
 
-        result = T.getMatchingIntervals(
-            "chr10", sv, regions
+        result = T.getMatchingIntervalsFromTree(
+            "chr10", sv, trees
         )
-        self.assertEqual(result, P.empty())
+        self.assertEqual(result.is_empty(), IntervalTree().is_empty())
 
     def test_chromosome_already_prefixed_with_chr_in_regions_file(self):
-        regions, trees = T.loadGenomicCoordinatesFile(
-                'test_files/Homo_sapiens.GRCh37.75_10_chr.txt')
+        trees = T.loadGenomicCoordinatesFile(
+            'test_files/Homo_sapiens.GRCh37.75_10_chr.txt')
 
-        sv = P.closed(10, 76)
-        result = T.getMatchingIntervals(
-            "chr1", sv, regions
+        sv = Interval(12, 76)
+        result = T.getMatchingIntervalsFromTree(
+            "chr1", sv, trees
         )
 
-        expected_interval = P.closed(10, 45) | P.closed(47, 75)
+        expected_interval = IntervalTree([Interval(12, 76)])
         self.assertEqual(result, expected_interval)
 
-    def test_positions_are_not_numeric_in_regions_file(self):
-        pass
+    def test_no_matching_region_returns_empty_tree(self):
+        trees = {}
+        trees['chr1'] = IntervalTree([Interval(0, 10)])
+        sv = Interval(12, 76)
+        result = T.getMatchingIntervalsFromTree(
+            "chr1", sv, trees
+        )
 
-    def test_positions_are_not_numeric_in_PennCNV_file(self):
-        pass
-
-    def test_input_file_has_blank_lines(self):
-        pass
+        expected = IntervalTree()
+        self.assertEqual(result, expected)
 
 
+    # def test_input_file_has_blank_lines(self):
+    #     pass
 
+    # def test_positions_are_not_numeric_in_regions_file(self):
+    #     pass
 
+    # def test_positions_are_not_numeric_in_PennCNV_file(self):
+    #     pass
 
 
 if __name__ == '__main__':

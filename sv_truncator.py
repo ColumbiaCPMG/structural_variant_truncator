@@ -1,7 +1,6 @@
 import sys
 import csv
 import re
-import portion as P
 import argparse
 from intervaltree import Interval, IntervalTree
 
@@ -10,23 +9,26 @@ def main():
 
     args = parseArgs(sys.argv)
 
-    regions, trees = loadGenomicCoordinatesFile(args.regions)
+    trees = loadGenomicCoordinatesFile(args.regions)
     sys.stderr.write('Regions File Processed\n')
 
-    processStructuralVariantsFile(args.variants, regions, trees)
+    processStructuralVariantsFile(args.variants, trees)
     sys.stderr.write('Conversion Complete\n')
 
 
 # Load the file which contains the genomic regions to restrict the variants to.
 # Typicall this would be an list of exons.
 def loadGenomicCoordinatesFile(regions_file_path):
-    regions = {}
+    # regions = {}
     trees = {}
 
     try:
         regions_file = open(regions_file_path, 'r')
     except OSError:
         sys.stderr.write("Could not open/read file:" + regions_file_path)
+        sys.exit()
+    except TypeError:
+        sys.stderr.write("Error: You must specify a genomic regions file using -r.\n\n")
         sys.exit()
 
     with regions_file:
@@ -56,7 +58,7 @@ def loadGenomicCoordinatesFile(regions_file_path):
             if start == end:
                 end += 1
             
-            pos = P.closed(start, end)
+            pos = Interval(start, end)
 
             # add a tree for each chromosome to the trees dictionary
             # if not chromosome in regions:
@@ -78,14 +80,17 @@ def loadGenomicCoordinatesFile(regions_file_path):
 
         sys.stderr.write('\n')
 
-    return (regions, trees)
+    return (trees)
 
 
-def processStructuralVariantsFile(variants_file_path, regions, trees):
+def processStructuralVariantsFile(variants_file_path, trees):
     try:
         variants_file = open(variants_file_path, 'r')
     except OSError:
         sys.stderr.write("Could not open/read file:" + variants_file)
+        sys.exit()
+    except TypeError:
+        sys.stderr.write("Error: You must specify a Variants file using -v.\n\n")
         sys.exit()
 
     with variants_file:
@@ -105,69 +110,35 @@ def processStructuralVariantsFile(variants_file_path, regions, trees):
             if not str.isdigit(start) or not str.isdigit(end):
                 continue
 
-            # p = getMatchingIntervals(chromosome, P.closed(int(start), int(end)), regions)
             q = getMatchingIntervalsFromTree(chromosome, Interval(int(start), int(end), 0), trees)
 
             original_row = row.copy()
             original_row.append('original')
             writer.writerow(original_row)
-
-            # if p != P.empty():
-            #     row[0] = chromosome + ':' + str(p.lower) + '-' + str(p.upper)
-            #     row.append('truncated')
-            #     writer.writerow(row)
-
         
-            if not q.is_empty():
+            if q and not q.is_empty():
                 row[0] = chromosome + ':' + str(q.begin()) + '-' + str(q.end())
                 row.append('truncated')
                 writer.writerow(row)
 
 
-
-# returns a interval with all the matches for the specified coordinates of the
-# structural variant.  The interval may be non-atomic (contain more than one sub-Interval)
-def getMatchingIntervals(chromosome, structural_variant, regions):
-    intersections = []
-
-    if chromosome not in regions:
-        # sys.stderr.write(
-            # "** Warning Chr " + chromosome + " not found in Regions file.\n")
-        return P.empty()
-
-    # go through every region (exon) in the chromosome, and add it to the
-    # intersections array if it intersects
-    for region in regions[chromosome]:
-        # check to see if there is an overlap, and if so, add it to our array of 
-        # matching intersections
-        intersection = region & structural_variant
-        if not intersection == P.empty():
-            intersections = intersections + [intersection]
-
-    
-    # collapse all the intersections into one (potentially non-atomic) Interval
-    p = P.empty()
-    for i in intersections:
-        p = p | i
-
-    return p
-
 def getMatchingIntervalsFromTree(chromosome, structural_variant, trees):
+    it = IntervalTree()
+
     if chromosome not in trees:
         # sys.stderr.write(
             # "** Warning Chr " + chromosome + " not found in Regions file.\n")
-        return IntervalTree()
+        return it
 
-    # overlap = trees[chromosome].overlap(structural_variant.lower, structural_variant.upper)
-    # intersection = trees[chromosome].intersection([Interval(structural_variant.lower, structural_variant.upper)])
-    tree = IntervalTree()
-    tree[15:40] = ''
+    overlap = IntervalTree(trees[chromosome].overlap(structural_variant.begin, structural_variant.end))
 
-    # tree[48:50] = ''
-    intersection =  IntervalTree(trees[chromosome].overlap(structural_variant.begin, structural_variant.end))
-    # result_tree = IntervalTree(overlap)
-    return intersection
-    # return result_tree
+    if not overlap.is_empty():
+        lower = max(structural_variant.begin, overlap.begin())
+        upper = min(structural_variant.end, overlap.end())
+        i = Interval(lower, upper)
+        it.add(i)
+
+    return it
 
 
 def parseArgs(args):
