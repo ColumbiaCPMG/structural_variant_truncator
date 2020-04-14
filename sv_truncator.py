@@ -31,6 +31,8 @@ def loadGenomicCoordinatesFile(regions_file_path):
         sys.stderr.write("Error: You must specify a genomic regions file using -r.\n\n")
         sys.exit()
 
+    sys.stderr.write('Reading Regions File...\n')
+
     with regions_file:
         reader = csv.reader(regions_file, delimiter='\t')
 
@@ -58,22 +60,16 @@ def loadGenomicCoordinatesFile(regions_file_path):
             if start == end:
                 end += 1
             
-            pos = Interval(start, end)
-
             # add a tree for each chromosome to the trees dictionary
             # if not chromosome in regions:
             if not chromosome in trees:
-                # regions[chromosome] = [pos] 
-                # regions[chromosome] = pos
                 t = IntervalTree()
                 t[start:end] = ''
                 trees[chromosome] = t
             # if the key for that chromosome already exist, append the interval
             # the data it contains doesn't matter, so use and empty string
             else:
-                # regions[chromosome].append(pos)
                 trees[chromosome][start:end] = ''
-                # regions[chromosome] = regions[chromosome] | pos
 
             # Show wich line has been processed in the terminal
             sys.stderr.write('Line:' + str(i) + '\r')
@@ -144,10 +140,11 @@ def getMatchingIntervalsFromTree(chromosome, structural_variant, trees):
 def parseArgs(args):
     parser = argparse.ArgumentParser(
         description='Truncate Structural Variants (SVs) to specified genomic regions.')
-    parser.add_argument('-v', '--variants',
+    parser.add_argument('-v', '--variants', metavar='FILE',
                         help='File containing variants in PennCNV format.')
-    parser.add_argument('-r', '--regions',
-                        help='File containing genomic regions in format "chromosome,start,end" (tab delimited also ok).')
+    parser.add_argument('-r', '--regions', metavar='FILE',
+                        help='File containing genomic regions in format "chromosome start end". ' +
+                        'Bed file format also ok.')
 
     return parser.parse_args()
 
