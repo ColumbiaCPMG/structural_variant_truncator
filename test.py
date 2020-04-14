@@ -48,20 +48,28 @@ class Tests(unittest.TestCase):
         result = T.getMatchingIntervals(
             "chr10", sv, regions
         )
-
         self.assertEqual(result, P.empty())
 
     def test_chromosome_already_prefixed_with_chr_in_regions_file(self):
-        regions = T.loadGenomicCoordinatesFile(
+        regions, trees = T.loadGenomicCoordinatesFile(
                 'test_files/Homo_sapiens.GRCh37.75_10_chr.txt')
 
-        sv = P.closed(11860,12220)
+        sv = P.closed(10, 76)
         result = T.getMatchingIntervals(
             "chr1", sv, regions
         )
 
-        interval = P.closed(11872,12220)
-        self.assertEqual(result, interval)
+        expected_interval = P.closed(10, 45) | P.closed(47, 75)
+        self.assertEqual(result, expected_interval)
+
+    def test_positions_are_not_numeric_in_regions_file(self):
+        pass
+
+    def test_positions_are_not_numeric_in_PennCNV_file(self):
+        pass
+
+    def test_input_file_has_blank_lines(self):
+        pass
 
 
 

@@ -21,7 +21,7 @@
                 "-v",
                 "test_files/CRIC_CNVs_hg18_test_n10.txt",
                 "-r",
-                "test_files/Homo_sapiens.GRCh37.75_100.txt"
+                "test_files/Homo_sapiens.GRCh37.75_10_chr.txt",
             ],
         }
     ]
